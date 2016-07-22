@@ -1,0 +1,27 @@
+{
+  "name": "moemark-renderer",
+  "version": "1.0.0",
+  "description": "Auto render markdown with code and math using MoeMark",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Moeditor/moemark-renderer.git"
+  },
+  "keywords": [
+    "markdown"
+  ],
+  "author": "Menci",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/Moeditor/moemark-renderer/issues"
+  },
+  "homepage": "https://github.com/Moeditor/moemark-renderer#readme",
+  "dependencies": {
+    "highlight.js": "^9.5.0",
+    "katex": "^0.6.0",
+    "moemark": "^0.3.6"
+  }
+}

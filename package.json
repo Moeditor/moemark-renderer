@@ -1,8 +1,9 @@
 {
   "name": "moemark-renderer",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Auto render markdown with code and math using MoeMark",
   "main": "index.js",
+  "bin": "./bin/moemark-renderer",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },

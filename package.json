@@ -1,6 +1,6 @@
 {
   "name": "moemark-renderer",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "description": "Auto render markdown with code and math using MoeMark",
   "main": "index.js",
   "bin": "./bin/moemark-renderer",
@@ -21,8 +21,10 @@
   },
   "homepage": "https://github.com/Moeditor/moemark-renderer#readme",
   "dependencies": {
-    "highlight.js": "^9.5.0",
+    "highlight.js": "^9.6.0",
+    "jsdom": "^9.4.2",
     "katex": "^0.6.0",
-    "moemark": "^0.3.6"
+    "mathjax-node": "^0.5.1",
+    "moemark": "^0.3.7"
   }
 }

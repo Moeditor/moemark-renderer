@@ -20,6 +20,9 @@
 const MoeMark = require('moemark');
 const highlightjs = require('highlight.js');
 const katex = require('katex');
+const mj = require('mathjax-node');
+
+let mathCnt = 0, maths = new Array(), res, callback;
 
 MoeMark.setOptions({
     lineNumber: false,
@@ -37,11 +40,42 @@ MoeMark.setOptions({
         try {
             return katex.renderToString(str, { displayMode: display });
         } catch(e) {
-            return '<div style="display: inline-block; border: 1px solid #000; "><strong>' + e.toString() + '</strong></div>';
+            const id = mathCnt;
+            mathCnt++;
+            mj.typeset({
+                math: str,
+                format: display ? 'TeX' : 'inline-TeX',
+                svg: true,
+                width: 0
+            }, function (data) {
+                if (data.errors) maths[id] = '<div style="display: inline-block; border: 1px solid #000; "><strong>' + data.errors.toString() + '</strong></div>';
+                else maths[id] = data.svg;
+                if (!--mathCnt) finish();
+            });
+
+            return '<div id="math-' + id + '"></div>';
         }
     }
 });
 
-module.exports = function(s) {
-    return MoeMark(s);
+function finish() {
+    if (!maths.length) callback(res);
+    let x = require('jsdom').jsdom().createElement('div');
+    x.innerHTML = res;
+    for (let i = 0; i < maths.length; i++) {
+        x.querySelector('#math-' + i).outerHTML = maths[i];
+    }
+    callback(x.innerHTML);
+}
+
+module.exports = function(s, cb) {
+    callback = cb;
+    try {
+        res = MoeMark(s);
+        if (mathCnt == 0) {
+            finish();
+        }
+    } catch(e) {
+        callback(e);
+    }
 };

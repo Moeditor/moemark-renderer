@@ -49,6 +49,7 @@ MoeMark.setOptions({
                 width: 0
             }, function (data) {
                 if (data.errors) maths[id] = '<div style="display: inline-block; border: 1px solid #000; "><strong>' + data.errors.toString() + '</strong></div>';
+                else if (display) maths[id] = '<div style="text-align: center; ">' + data.svg + '</div>';
                 else maths[id] = data.svg;
                 if (!--mathCnt) finish();
             });

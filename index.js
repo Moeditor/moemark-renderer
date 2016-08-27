@@ -54,7 +54,7 @@ MoeMark.setOptions({
                 if (!--mathCnt) finish();
             });
 
-            return '<div id="math-' + id + '"></div>';
+            return '<span id="math-' + id + '"></span>';
         }
     }
 });

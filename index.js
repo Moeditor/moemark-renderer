@@ -22,25 +22,57 @@ const highlightjs = require('highlight.js');
 const katex = require('katex');
 const mj = require('mathjax-node');
 
-module.exports = function(s, cb) {
-    let mathCnt = 0, maths = new Array(), res, callback, ss;
+let defaultCache = {
+    data: {},
+    get(key) {
+        return this.data[key];
+    },
+    set(key, val) {
+        this.data[key] = val;
+    }
+};
+
+let config = {
+  highlight: (code, lang) => {
+    try {
+        if (!lang || lang == '') return highlightjs.highlightAuto(code).value;
+        else return highlightjs.highlight(lang, code).value;
+    } catch(e) {
+        return code;
+    }
+  }
+};
+
+function render(s, cb) {
+    let mathCnt = 0, maths = new Array(), res, callback, ss, cache = render.cache, cacheOption = render.cacheOption, finished = false;
+    if (cacheOption.result) {
+        let x = cache.get('RES_' + s);
+        if (x !== undefined) return x;
+    }
 
     MoeMark.setOptions({
         lineNumber: false,
         math: true,
         highlight: function(code, lang) {
-            try {
-                if (!lang || lang == '') res = highlightjs.highlightAuto(code).value;
-                else res = highlightjs.highlight(lang, code).value;
-            } catch(e) {
-                res = code;
+            if (cacheOption.highlight) {
+                let x = cache.get('H_' + lang + '_' + code);
+                if (x !== undefined) return x;
             }
+            let res = config.highlight(code, lang);
+            if (cacheOption.highlight) cache.set('H_' + lang + '_' + code, res);
             return res;
         },
         mathRenderer: function(str, display) {
+            if (cacheOption.math) {
+                let x = cache.get('M_' + display + '_' + str);
+                if (x !== undefined) return x;
+            }
             try {
-                return katex.renderToString(str, { displayMode: display });
-            } catch(e) {
+                let res = katex.renderToString(str, { displayMode: display });
+                if (cacheOption.math) cache.set('M_' + display + '_' + str, res);
+                return res;
+            } catch (e) {
+                // console.log(e);
                 const id = mathCnt;
                 mathCnt++;
                 mj.typeset({
@@ -52,6 +84,7 @@ module.exports = function(s, cb) {
                     if (data.errors) maths[id] = '<div style="display: inline-block; border: 1px solid #000; "><strong>' + data.errors.toString() + '</strong></div>';
                     else if (display) maths[id] = '<div style="text-align: center; ">' + data.svg + '</div>';
                     else maths[id] = data.svg;
+                    if (cacheOption.math) cache.set('M_' + display + '_' + str, maths[id]);
                     if (!--mathCnt) finish();
                 });
 
@@ -61,13 +94,18 @@ module.exports = function(s, cb) {
     });
 
     function finish() {
-        if (!maths.length) cb(res);
-        let x = require('jsdom').jsdom().createElement('div');
-        x.innerHTML = res;
-        for (let i = 0; i < maths.length; i++) {
-    		x.querySelector('#math-' + i).outerHTML = maths[i];;
+		if (finished || !res || mathCnt) return;
+		finished = true;
+        if (maths.length) {
+            let x = require('jsdom').jsdom().createElement('div');
+            x.innerHTML = res;
+            for (let i = 0; i < maths.length; i++) {
+              x.querySelector('#math-' + i).outerHTML = maths[i];
+            }
+			res = x.innerHTML;
         }
-        cb(x.innerHTML);
+        if (cacheOption.result) cache.set('RES_' + s, res);
+        cb(res);
     }
 
     try {
@@ -76,6 +114,17 @@ module.exports = function(s, cb) {
             finish();
         }
     } catch(e) {
-        callback(e);
+        cb(e);
     }
 };
+
+render.moemark = MoeMark;
+render.cache = defaultCache;
+render.cacheOption = {
+    highlight: true,
+    math: true,
+    result: false
+};
+render.config = config;
+
+module.exports = render;

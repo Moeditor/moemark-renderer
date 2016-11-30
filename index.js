@@ -50,11 +50,14 @@ let config = {
   }
 };
 
-function render(s, cb) {
+function render(s, options, cb) {
+    if (!s.trim()) cb('');
+    if (typeof options === 'function') cb = options, options = {};
+
     let mathCnt = 0, maths = new Array(), hlCnt = 0, hls = new Array(), res, callback, ss, cache = render.cache, cacheOption = render.cacheOption, finished = false;
     if (cacheOption.result) {
         let x = cache.get('RES_' + s);
-        if (x !== undefined) return x;
+        if (x !== undefined) return cb(x);
     }
 
     MoeMark.setOptions({
@@ -71,7 +74,7 @@ function render(s, cb) {
                 hls[id] = res;
                 if (cacheOption.highlight) cache.set('H_' + lang + '_' + code, res);
                 if (!--hlCnt) finish();
-			});
+            });
             return '<span id="hl-' + id + '"></span>';
         },
         mathRenderer: function(str, display) {
@@ -106,8 +109,8 @@ function render(s, cb) {
     });
 
     function finish() {
-		if (finished || !res || mathCnt || hlCnt) return;
-		finished = true;
+        if (finished || !res || mathCnt || hlCnt) return;
+        finished = true;
         if (maths.length || hls.length) {
             let x = require('jsdom').jsdom().createElement('div');
             x.innerHTML = res;
@@ -117,14 +120,14 @@ function render(s, cb) {
             for (let i = 0; i < hls.length; i++) {
               x.querySelector('#hl-' + i).outerHTML = hls[i];
             }
-			res = x.innerHTML;
+            res = x.innerHTML;
         }
         if (cacheOption.result) cache.set('RES_' + s, res);
         cb(res);
     }
 
     try {
-        res = MoeMark(s);
+        res = MoeMark(s, options);
         if (mathCnt == 0 && hlCnt == 0) {
             finish();
         }

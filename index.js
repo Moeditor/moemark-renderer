@@ -50,14 +50,11 @@ let config = {
   }
 };
 
-function render(s, options, cb) {
-    if (!s.trim()) cb('');
-    if (typeof options === 'function') cb = options, options = {};
-
-    let mathCnt = 0, maths = new Array(), hlCnt = 0, hls = new Array(), res, callback, ss, cache = render.cache, cacheOption = render.cacheOption, finished = false;
+function render(s, cb) {
+    let mathCnt = 0, mathPending = 0, maths = new Array(), hlCnt = 0, hlPending = 0, hls = new Array(), res, callback, ss, cache = render.cache, cacheOption = render.cacheOption, finished = false;
     if (cacheOption.result) {
         let x = cache.get('RES_' + s);
-        if (x !== undefined) return cb(x);
+        if (x !== undefined) return x;
     }
 
     MoeMark.setOptions({
@@ -69,11 +66,11 @@ function render(s, options, cb) {
                 if (x !== undefined) return x;
             }
             let id = hlCnt;
-            hlCnt++;
+            hlCnt++, hlPending++;
             config.highlight(code, lang, res => {
                 hls[id] = res;
                 if (cacheOption.highlight) cache.set('H_' + lang + '_' + code, res);
-                if (!--hlCnt) finish();
+                if (!--hlPending) finish();
             });
             return '<span id="hl-' + id + '"></span>';
         },
@@ -89,7 +86,7 @@ function render(s, options, cb) {
             } catch (e) {
                 // console.log(e);
                 const id = mathCnt;
-                mathCnt++;
+                mathCnt++, mathPending++;
                 mj.typeset({
                     math: str,
                     format: display ? 'TeX' : 'inline-TeX',
@@ -100,7 +97,7 @@ function render(s, options, cb) {
                     else if (display) maths[id] = '<div style="text-align: center; ">' + data.svg + '</div>';
                     else maths[id] = data.svg;
                     if (cacheOption.math) cache.set('M_' + display + '_' + str, maths[id]);
-                    if (!--mathCnt) finish();
+                    if (!--mathPending) finish();
                 });
 
                 return '<span id="math-' + id + '"></span>';
@@ -109,7 +106,7 @@ function render(s, options, cb) {
     });
 
     function finish() {
-        if (finished || !res || mathCnt || hlCnt) return;
+        if (finished || !res || mathPending || hlPending) return;
         finished = true;
         if (maths.length || hls.length) {
             let x = require('jsdom').jsdom().createElement('div');
@@ -127,8 +124,8 @@ function render(s, options, cb) {
     }
 
     try {
-        res = MoeMark(s, options);
-        if (mathCnt == 0 && hlCnt == 0) {
+        res = MoeMark(s);
+        if (mathPending == 0 && hlPending == 0) {
             finish();
         }
     } catch(e) {

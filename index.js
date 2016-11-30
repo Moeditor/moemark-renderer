@@ -32,19 +32,26 @@ let defaultCache = {
     }
 };
 
+function escapeHTML(s) {
+  // Code from http://stackoverflow.com/questions/5251520/how-do-i-escape-some-html-in-javascript/5251551
+  return s.replace(/[^0-9A-Za-z ]/g, (c) => {
+    return "&#" + c.charCodeAt(0) + ";";
+  });
+}
+
 let config = {
-  highlight: (code, lang) => {
+  highlight: (code, lang, cb) => {
     try {
-        if (!lang || lang == '') return highlightjs.highlightAuto(code).value;
-        else return highlightjs.highlight(lang, code).value;
+        if (!lang || lang == '') cb(highlightjs.highlightAuto(code).value);
+        else cb(highlightjs.highlight(lang, code).value);
     } catch(e) {
-        return code;
+        cb(escapeHTML(code));
     }
   }
 };
 
 function render(s, cb) {
-    let mathCnt = 0, maths = new Array(), res, callback, ss, cache = render.cache, cacheOption = render.cacheOption, finished = false;
+    let mathCnt = 0, maths = new Array(), hlCnt = 0, hls = new Array(), res, callback, ss, cache = render.cache, cacheOption = render.cacheOption, finished = false;
     if (cacheOption.result) {
         let x = cache.get('RES_' + s);
         if (x !== undefined) return x;
@@ -58,9 +65,14 @@ function render(s, cb) {
                 let x = cache.get('H_' + lang + '_' + code);
                 if (x !== undefined) return x;
             }
-            let res = config.highlight(code, lang);
-            if (cacheOption.highlight) cache.set('H_' + lang + '_' + code, res);
-            return res;
+            let id = hlCnt;
+            hlCnt++;
+            config.highlight(code, lang, res => {
+                hls[id] = res;
+                if (cacheOption.highlight) cache.set('H_' + lang + '_' + code, res);
+                if (!--hlCnt) finish();
+			});
+            return '<span id="hl-' + id + '"></span>';
         },
         mathRenderer: function(str, display) {
             if (cacheOption.math) {
@@ -94,13 +106,16 @@ function render(s, cb) {
     });
 
     function finish() {
-		if (finished || !res || mathCnt) return;
+		if (finished || !res || mathCnt || hlCnt) return;
 		finished = true;
-        if (maths.length) {
+        if (maths.length || hls.length) {
             let x = require('jsdom').jsdom().createElement('div');
             x.innerHTML = res;
             for (let i = 0; i < maths.length; i++) {
               x.querySelector('#math-' + i).outerHTML = maths[i];
+            }
+            for (let i = 0; i < hls.length; i++) {
+              x.querySelector('#hl-' + i).outerHTML = hls[i];
             }
 			res = x.innerHTML;
         }
@@ -110,7 +125,7 @@ function render(s, cb) {
 
     try {
         res = MoeMark(s);
-        if (mathCnt == 0) {
+        if (mathCnt == 0 && hlCnt == 0) {
             finish();
         }
     } catch(e) {

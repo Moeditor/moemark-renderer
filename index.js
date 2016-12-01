@@ -50,14 +50,17 @@ let config = {
   }
 };
 
-function render(s, cb) {
+function render(s, options, cb) {
+	if (!cb) cb = options, options = {};
+	if (!s.trim()) return cb('');
+
     let mathCnt = 0, mathPending = 0, maths = new Array(), hlCnt = 0, hlPending = 0, hls = new Array(), res, callback, ss, cache = render.cache, cacheOption = render.cacheOption, finished = false;
     if (cacheOption.result) {
         let x = cache.get('RES_' + s);
-        if (x !== undefined) return x;
+        if (x !== undefined) return cb(x);
     }
 
-    MoeMark.setOptions({
+    MoeMark.setOptions(Object.assign({
         lineNumber: false,
         math: true,
         highlight: function(code, lang) {
@@ -103,7 +106,7 @@ function render(s, cb) {
                 return '<span id="math-' + id + '"></span>';
             }
         }
-    });
+    }, options));
 
     function finish() {
         if (finished || !res || mathPending || hlPending) return;

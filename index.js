@@ -96,8 +96,8 @@ function render(s, options, cb) {
                     svg: true,
                     width: 0
                 }, function (data) {
-                    if (data.errors) maths[id] = '<div style="display: inline-block; border: 1px solid #000; "><strong>' + data.errors.toString() + '</strong></div>';
-                    else if (display) maths[id] = '<div style="text-align: center; ">' + data.svg + '</div>';
+                    if (data.errors) maths[id] = '<p><div style="display: inline-block; border: 1px solid #000; "><strong>' + data.errors.toString() + '</strong></div></p>';
+                    else if (display) maths[id] = '<p style="text-align: center; ">' + data.svg + '</div>';
                     else maths[id] = data.svg;
                     if (cacheOption.math) cache.set('M_' + display + '_' + str, maths[id]);
                     if (!--mathPending) finish();

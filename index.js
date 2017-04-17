@@ -93,12 +93,13 @@ function render(s, options, cb) {
                 mj.typeset({
                     math: str,
                     format: display ? 'TeX' : 'inline-TeX',
-                    svg: true,
+                    html: options.mathjaxUseHtml ? true : false,
+                    svg: options.mathjaxUseHtml ? false : true,
                     width: 0
                 }, function (data) {
                     if (data.errors) maths[id] = '<p><div style="display: inline-block; border: 1px solid #000; "><strong>' + data.errors.toString() + '</strong></div></p>';
-                    else if (display) maths[id] = '<p style="text-align: center; ">' + data.svg + '</p>';
-                    else maths[id] = data.svg;
+                    else if (display) maths[id] = '<p style="text-align: center; ">' + (options.mathjaxUseHtml ? data.html : data.svg) + '</p>';
+                    else maths[id] = options.mathjaxUseHtml ? data.html : data.svg;
                     if (cacheOption.math) cache.set('M_' + display + '_' + str, maths[id]);
                     if (!--mathPending) finish();
                 });
